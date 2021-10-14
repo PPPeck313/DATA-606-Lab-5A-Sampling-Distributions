@@ -1,0 +1,211 @@
+---
+title: "DATA 606 - Lab 5A - Sampling Distributions"
+author: "Preston Peck"
+date: "`r Sys.Date()`"
+output: openintro::lab_report
+---
+
+# Sampling Distributions
+
+<https://htmlpreview.github.io/?https://github.com/jbryer/DATA606/blob/master/inst/labs/Lab5a/Lab5a_sampling_distributions.html>
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(openintro)
+library(infer)
+library(psych)
+library(qdapTools)
+```
+
+```{r}
+set.seed(37)
+
+benefitsLabel <- "Benefits"
+doesntBenefitLabel <- "Doesn't benefit"
+  
+global_monitor <- tibble(
+  scientist_work = c(rep(benefitsLabel, 80000), rep(doesntBenefitLabel, 20000))
+)
+```
+
+### Exercise 1
+The distribution in the smaller sample size is very similar to that of the larger sample size since the proportions of each scientist_work type within its respective set is very close between the data sets
+```{r}
+analyzeSamplingProportion <- function(sample, size = NULL) {
+  sizedSample <- if(is.null(size)) {
+    sample
+  } else {
+    sample %>%
+      sample_n(size)
+  }
+  
+  sizedSampleTable <- sizedSample %>%
+    mtabulate %>%
+    t %>%
+    as_tibble
+
+  colnames(sizedSampleTable) <- c("n")
+  
+  sizedSampleTable <- sizedSampleTable %>%
+    mutate(p = n / sum(n)) %>%
+    mutate(scientist_work = rowNames) %>%
+    select(scientist_work, n, p)
+    
+  print(sizedSampleTable)
+  
+  print(ggplot(sizedSample, aes(x = scientist_work)) +
+    geom_bar() +
+    labs(
+      x = "",
+      y = "",
+      title = "Do you believe that the work scientists do benefit people like you?"
+    ) +
+    coord_flip())
+}
+```
+
+```{r}
+smallNumOfElements = 50
+mediumNumOfElements = 100
+largeNumOfElements = 1000
+rowNames = c("Benefits", "Doesn't benefit")
+
+
+
+global_monitor %>%
+  analyzeSamplingProportion
+
+samp1 <- global_monitor %>%
+  analyzeSamplingProportion(smallNumOfElements)
+```
+
+### Exercise 2
+With such a small sample size, the proportions will be very prone to changing since small variations can result in big changes, so I can't say for sure that other students will have the same results, but we will probably have similar results.
+
+### Exercise 3
+Larger datasets will be closer to the proportions of the overall population since we're approaching its size
+```{r}
+samp2 <- global_monitor %>%
+  analyzeSamplingProportion(smallNumOfElements)
+
+samp3 <- global_monitor %>%
+  analyzeSamplingProportion(mediumNumOfElements)
+  
+samp4 <- global_monitor %>%
+  analyzeSamplingProportion(largeNumOfElements)
+```
+
+### Exercise 4
+```{r}
+analyzeSamplingProportionDistribution <- function(sample, size, reps, binwidth = .02, benefits = FALSE) {
+  sizedSamples <- sample %>%
+    rep_sample_n(size = size, reps = reps, replace = TRUE) %>%
+    count(scientist_work) %>%
+    mutate(p_hat = n /sum(n))
+  
+  typeLabel <- if (benefits) { 
+      benefitsLabel
+    } else {
+      doesntBenefitLabel
+    }
+  
+  sample_props_doesnt_benefit <- sizedSamples %>%
+    filter(scientist_work == typeLabel)
+  
+  print(ggplot(data = sample_props_doesnt_benefit, aes(x = p_hat)) +
+    geom_histogram(binwidth = binwidth) +
+    labs(
+      x = paste("p_hat (", typeLabel, ")", sep = ""),
+      title = "Sampling distribution of p_hat",
+      subtitle = paste("Sample size = ", size, " Number of samples = ", reps, sep = "")
+    ))
+  
+  print(sample_props_doesnt_benefit)
+  print(sample_props_doesnt_benefit$p_hat %>%
+    describe)
+  
+  print(sizedSamples$n %>%
+    sum)
+}
+```
+
+There are 15000 observations each with 50 elements, which means that there are 750000 elements across all observations. The average and median of "Doesn't benefit" across all datasets is .2
+```{r}
+numOfElements <- 50
+numOfSamples <- 15000
+
+
+
+sample_props50 <- global_monitor %>%
+  analyzeSamplingProportionDistribution(numOfElements, numOfSamples)
+```
+
+### Exercise 5
+There are 25 observations each with 50 elements, which means that there are 250 elements across all observations. There are only 23 observations with "Doesn't benefit" elements however, which mean 2 observations have 0 "Doesn't benefit" elements
+```{r}
+smallNumOfElements <- 10
+smallNumOfSamples <- 25
+binWidth <- 0.1
+
+
+
+sample_props_small <- global_monitor %>%
+  analyzeSamplingProportionDistribution(smallNumOfElements, smallNumOfSamples, binWidth)
+```
+
+### Exercise 6
+The standard deviation decreases as sample size increases, but the mean and the shape (unimodal, no skew) remains fairly consistent given the high number of repetitions which would only further stabilize given more elements and repititions
+```{r}
+mediumNumOfElements <- 50
+largeNumOfElements <- 100
+numOfSamples <- 5000
+
+
+
+global_monitor %>%
+  analyzeSamplingProportionDistribution(smallNumOfElements, numOfSamples, binWidth)
+
+global_monitor %>%
+  analyzeSamplingProportionDistribution(mediumNumOfElements, numOfSamples)
+
+global_monitor %>%
+  analyzeSamplingProportionDistribution(largeNumOfElements, numOfSamples)
+```
+
+### Exercise 7
+86.7% of people believe that scientists benefit us
+```{r}
+numOfElements <- 15
+
+
+
+global_monitor %>%
+  analyzeSamplingProportion(numOfElements)
+```
+
+### Exercise 8
+The shape is unimodal, no skew. 80% of people believe that scientists benefit us
+```{r}
+numOfSamples <- 2000
+binWidth <- .0667
+
+
+
+sample_props15 <- global_monitor %>%
+  analyzeSamplingProportionDistribution(numOfElements, numOfSamples, binWidth, TRUE)
+```
+
+### Exercise 9
+80% of people believe that scientists benefit us
+```{r}
+numOfElements <- 150
+binWidth <- .02
+
+
+
+sample_props150 <- global_monitor %>%
+  analyzeSamplingProportionDistribution(numOfElements, numOfSamples, binWidth, TRUE)
+```
+
+### Exercise 10
+sample_props150 has a smaller spread/deviation (.03) when compared to sample_props15 (.1). A smaller spread/deviation promises a tighter and more consistent dataset
