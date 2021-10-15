@@ -20,6 +20,7 @@ library(qdapTools)
 ```{r}
 set.seed(37)
 
+nLabel <- "n"
 benefitsLabel <- "Benefits"
 doesntBenefitLabel <- "Doesn't benefit"
   
@@ -31,7 +32,7 @@ global_monitor <- tibble(
 ### Exercise 1
 The distribution in the smaller sample size is very similar to that of the larger sample size since the proportions of each scientist_work type within its respective set is very close between the data sets
 ```{r}
-analyzeSamplingProportion <- function(sample, size = NULL) {
+sizeSample <- function(sample, size = NULL) {
   sizedSample <- if(is.null(size)) {
     sample
   } else {
@@ -39,16 +40,22 @@ analyzeSamplingProportion <- function(sample, size = NULL) {
       sample_n(size)
   }
   
+  return(sizedSample)
+}
+
+analyzeSamplingProportion <- function(sample, size = NULL) {
+  sizedSample <- sizeSample(sample, size)
+  
   sizedSampleTable <- sizedSample %>%
     mtabulate %>%
     t %>%
     as_tibble
 
-  colnames(sizedSampleTable) <- c("n")
+  colnames(sizedSampleTable) <- c(nLabel)
   
   sizedSampleTable <- sizedSampleTable %>%
     mutate(p = n / sum(n)) %>%
-    mutate(scientist_work = rowNames) %>%
+    mutate(scientist_work = c(benefitsLabel, doesntBenefitLabel)) %>%
     select(scientist_work, n, p)
     
   print(sizedSampleTable)
@@ -61,6 +68,8 @@ analyzeSamplingProportion <- function(sample, size = NULL) {
       title = "Do you believe that the work scientists do benefit people like you?"
     ) +
     coord_flip())
+  
+  return(sizedSampleTable)
 }
 ```
 
@@ -68,7 +77,6 @@ analyzeSamplingProportion <- function(sample, size = NULL) {
 smallNumOfElements = 50
 mediumNumOfElements = 100
 largeNumOfElements = 1000
-rowNames = c("Benefits", "Doesn't benefit")
 
 
 
@@ -97,8 +105,8 @@ samp4 <- global_monitor %>%
 
 ### Exercise 4
 ```{r}
-analyzeSamplingProportionDistribution <- function(sample, size, reps, binwidth = .02, benefits = FALSE) {
-  sizedSamples <- sample %>%
+analyzeSamplingProportionDistribution <- function(sample, size = NULL, reps = 1, binwidth = .02, benefits = FALSE) {
+  sizedSamples <- sizeSample(sample, size) %>%
     rep_sample_n(size = size, reps = reps, replace = TRUE) %>%
     count(scientist_work) %>%
     mutate(p_hat = n /sum(n))
@@ -109,10 +117,10 @@ analyzeSamplingProportionDistribution <- function(sample, size, reps, binwidth =
       doesntBenefitLabel
     }
   
-  sample_props_doesnt_benefit <- sizedSamples %>%
+  filteredSamples <- sizedSamples %>%
     filter(scientist_work == typeLabel)
   
-  print(ggplot(data = sample_props_doesnt_benefit, aes(x = p_hat)) +
+  print(ggplot(data = filteredSamples, aes(x = p_hat)) +
     geom_histogram(binwidth = binwidth) +
     labs(
       x = paste("p_hat (", typeLabel, ")", sep = ""),
@@ -120,12 +128,14 @@ analyzeSamplingProportionDistribution <- function(sample, size, reps, binwidth =
       subtitle = paste("Sample size = ", size, " Number of samples = ", reps, sep = "")
     ))
   
-  print(sample_props_doesnt_benefit)
-  print(sample_props_doesnt_benefit$p_hat %>%
+  print(filteredSamples)
+  print(filteredSamples$p_hat %>%
     describe)
   
   print(sizedSamples$n %>%
     sum)
+  
+  return(sizedSamples)
 }
 ```
 
