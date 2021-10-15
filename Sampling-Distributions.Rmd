@@ -23,6 +23,7 @@ set.seed(37)
 nLabel <- "n"
 benefitsLabel <- "Benefits"
 doesntBenefitLabel <- "Doesn't benefit"
+typeLabels <- c(benefitsLabel, doesntBenefitLabel)
   
 global_monitor <- tibble(
   scientist_work = c(rep(benefitsLabel, 80000), rep(doesntBenefitLabel, 20000))
@@ -42,7 +43,9 @@ sizeSample <- function(sample, size = NULL) {
   
   return(sizedSample)
 }
+```
 
+```{r}
 analyzeSamplingProportion <- function(sample, size = NULL) {
   sizedSample <- sizeSample(sample, size)
   
@@ -55,7 +58,7 @@ analyzeSamplingProportion <- function(sample, size = NULL) {
   
   sizedSampleTable <- sizedSampleTable %>%
     mutate(p = n / sum(n)) %>%
-    mutate(scientist_work = c(benefitsLabel, doesntBenefitLabel)) %>%
+    mutate(scientist_work = typeLabels) %>%
     select(scientist_work, n, p)
     
   print(sizedSampleTable)
