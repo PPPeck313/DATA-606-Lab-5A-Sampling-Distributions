@@ -14,7 +14,6 @@ library(tidyverse)
 library(openintro)
 library(infer)
 library(psych)
-library(qdapTools)
 ```
 
 ```{r}
@@ -48,24 +47,12 @@ sizeSample <- function(sample, size = NULL) {
 analyzeSamplingProportion <- function(sample, size = NULL) {
   sizedSample <- sizeSample(sample, size)
   
-  sizedSampleTable <- sizedSample %>%
-    mtabulate
-  
-  colNames <- sizedSampleTable %>%
-    colnames
-  
-  sizedSampleTable <- sizedSampleTable %>%
-    t %>%
-    as_tibble
-
-  colnames(sizedSampleTable) <- c(nLabel)
-  
-  sizedSampleTable <- sizedSampleTable %>%
+  sizedSampleProportions <- sizedSample %>%
+    count(scientist_work) %>%
     mutate(p = n / sum(n)) %>%
-    mutate(scientist_work = colNames) %>%
     select(scientist_work, n, p)
     
-  print(sizedSampleTable)
+  print(sizedSampleProportions)
   
   print(ggplot(sizedSample, aes(x = scientist_work)) +
     geom_bar() +
@@ -76,7 +63,7 @@ analyzeSamplingProportion <- function(sample, size = NULL) {
     ) +
     coord_flip())
   
-  return(sizedSampleTable)
+  return(sizedSampleProportions)
 }
 ```
 
